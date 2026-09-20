@@ -79,10 +79,11 @@ they will be listed first:
 Co-authored-by: Their Name <their@email>
 ```
 
-## What we accept
+## What is not allowed
 
-These wallpapers ship as part of Pelton, so they end up on other people's
-screens at work and in public. Submissions are rejected if they contain:
+A wallpaper sits on someone's screen all day, often at work or with other
+people in the room, so the content bar is higher than for most art. A
+submission is turned down if it contains:
 
 - Sexual, gory, shocking or otherwise not-safe-for-work imagery
 - Hateful, harassing or discriminatory content, including slurs and hate
@@ -100,7 +101,7 @@ Keep SVGs to plain drawing markup. No `<script>`, no `<foreignObject>`, no
 remote `href` fetches, no embedded fonts pulled off a CDN. Anything that makes
 a network request or executes will be rejected on sight.
 
-## AI-generated art
+## No fully AI-generated art
 
 Fully AI-generated wallpapers are not accepted. Nothing where you wrote a
 prompt and submitted what came back, and nothing traced or lightly retouched
