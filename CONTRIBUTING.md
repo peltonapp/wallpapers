@@ -79,11 +79,9 @@ they will be listed first:
 Co-authored-by: Their Name <their@email>
 ```
 
-## What is not allowed
+## Submission rules
 
-A wallpaper sits on someone's screen all day, often at work or with other
-people in the room, so the content bar is higher than for most art. A
-submission is turned down if it contains:
+**We do NOT accept:**
 
 - Sexual, gory, shocking or otherwise not-safe-for-work imagery
 - Hateful, harassing or discriminatory content, including slurs and hate
@@ -96,10 +94,21 @@ submission is turned down if it contains:
 - Hidden or disguised payloads: text you only see at certain zoom levels,
   steganography, tracking pixels, scripts or external references inside the
   SVG, QR codes, or links to anything outside the Pelton project
+- Fully AI-generated art, see [below](#no-fully-ai-generated-art)
+
+**We do accept:**
+
+- Original artwork you made yourself, in any style
+- New sets, and new variants of an existing set
+- Reworks of existing wallpapers, as long as you keep the set recognisable
+- Desktop and mobile exports, including resolutions we do not cover yet
+- Editable source files, see [below](#source-files)
 
 Keep SVGs to plain drawing markup. No `<script>`, no `<foreignObject>`, no
 remote `href` fetches, no embedded fonts pulled off a CDN. Anything that makes
-a network request or executes will be rejected on sight.
+a network request or executes will be rejected on sight. The
+[SVG check](./.github/workflows/checks.yml) enforces this on every pull
+request, and you can run it yourself with `python3 scripts/check_svgs.py`.
 
 ## No fully AI-generated art
 
