@@ -15,7 +15,10 @@
       "authors": [
         "Arne K. (TRC-Loop)"
       ],
-      "svg": "wallpapers/desktop/night/1/default/night-1-default.svg",
+      "master": {
+        "kind": "vector",
+        "path": "wallpapers/desktop/night/1/default/night-1-default.svg"
+      },
       "exports": [
         {
           "width": 3840,
@@ -48,7 +51,10 @@
       "authors": [
         "Arne K. (TRC-Loop)"
       ],
-      "svg": "wallpapers/desktop/night/1/no-marker/night-1-no-marker.svg",
+      "master": {
+        "kind": "vector",
+        "path": "wallpapers/desktop/night/1/no-marker/night-1-no-marker.svg"
+      },
       "exports": [
         {
           "width": 3840,
@@ -81,7 +87,10 @@
       "authors": [
         "Arne K. (TRC-Loop)"
       ],
-      "svg": "wallpapers/desktop/plate/1/default/plate-1-default.svg",
+      "master": {
+        "kind": "vector",
+        "path": "wallpapers/desktop/plate/1/default/plate-1-default.svg"
+      },
       "exports": [
         {
           "width": 3840,
@@ -114,7 +123,10 @@
       "authors": [
         "Arne K. (TRC-Loop)"
       ],
-      "svg": "wallpapers/desktop/plate/1/no-marker/plate-1-no-marker.svg",
+      "master": {
+        "kind": "vector",
+        "path": "wallpapers/desktop/plate/1/no-marker/plate-1-no-marker.svg"
+      },
       "exports": [
         {
           "width": 3840,
@@ -147,7 +159,10 @@
       "authors": [
         "Arne K. (TRC-Loop)"
       ],
-      "svg": "wallpapers/desktop/plate/1/no-marker-no-compass/plate-1-no-marker-no-compass.svg",
+      "master": {
+        "kind": "vector",
+        "path": "wallpapers/desktop/plate/1/no-marker-no-compass/plate-1-no-marker-no-compass.svg"
+      },
       "exports": [
         {
           "width": 3840,

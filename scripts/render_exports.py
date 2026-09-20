@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
-"""Render the PNG and JPEG exports for every wallpaper from its SVG.
+"""Render the PNG and JPEG exports for every wallpaper from its master file.
 
-The SVG in each variant folder is the source of truth. This renders it at every
-target width for its platform, writes <stem>-<width>x<height>.png and .jpg next
-to it, and removes exports that no longer belong.
+Each variant folder holds exactly one master, either a vector one:
+
+    night-1-default.svg
+
+or a raster one, for hand-drawn art and photography:
+
+    night-1-default-master.png
+
+This renders that master at every target width for its platform, writes
+<stem>-<width>x<height>.png and .jpg next to it, and removes exports that no
+longer belong. A raster master is never upscaled, so it only produces the
+targets it is big enough for.
 
 Needs rsvg-convert (librsvg) and Pillow.
 """
@@ -27,6 +36,10 @@ TARGET_WIDTHS = {
 
 JPEG_QUALITY = 90
 VIEWBOX = re.compile(r"[\s,]+")
+
+# A raster master is marked by this suffix so it is never mistaken for an export.
+MASTER_SUFFIX = "-master"
+RASTER_MASTERS = (".png", ".jpg")
 
 
 def aspect_of(svg):
@@ -57,6 +70,11 @@ def aspect_of(svg):
 
 
 def render_png(svg, width, height, destination):
+    if shutil.which("rsvg-convert") is None:
+        raise SystemExit(
+            f"{svg.relative_to(REPO)} needs rsvg-convert, which is missing. "
+            "Install librsvg: brew install librsvg, or apt-get install librsvg2-bin."
+        )
     subprocess.run(
         [
             "rsvg-convert",
@@ -92,22 +110,65 @@ def write_jpeg(png, destination):
         )
 
 
-def render_variant(svg, widths, written, removed):
-    folder = svg.parent
-    aspect = aspect_of(svg)
-    if aspect is None:
-        raise SystemExit(f"{svg.relative_to(REPO)}: no usable viewBox or size, cannot render")
+def find_master(folder):
+    """Return the variant's master file, vector or raster, or None."""
+    svgs = sorted(folder.glob("*.svg"))
+    if svgs:
+        return svgs[0]
+    rasters = sorted(
+        path
+        for path in folder.iterdir()
+        if path.suffix in RASTER_MASTERS and path.stem.endswith(MASTER_SUFFIX)
+    )
+    return rasters[0] if rasters else None
 
-    view_width, view_height = aspect
-    expected = set()
+
+def resize_png(master, width, height, destination):
+    from PIL import Image
+
+    with Image.open(master) as image:
+        image.convert("RGBA" if image.mode in ("RGBA", "LA", "P") else "RGB").resize(
+            (width, height), Image.Resampling.LANCZOS
+        ).save(destination, "PNG", optimize=True)
+
+
+def render_variant(master, widths, written, removed, skipped):
+    folder = master.parent
+    is_vector = master.suffix == ".svg"
+    # The export stem drops the -master marker, so both kinds of master produce
+    # identically named exports.
+    stem = master.stem[: -len(MASTER_SUFFIX)] if not is_vector else master.stem
+
+    if is_vector:
+        size = aspect_of(master)
+        if size is None:
+            raise SystemExit(
+                f"{master.relative_to(REPO)}: no usable viewBox or size, cannot render"
+            )
+    else:
+        from PIL import Image
+
+        with Image.open(master) as image:
+            size = image.size
+
+    source_width, source_height = size
+    expected = {master.name}
 
     for width in widths:
-        height = round(width * view_height / view_width)
-        png = folder / f"{svg.stem}-{width}x{height}.png"
-        jpeg = folder / f"{svg.stem}-{width}x{height}.jpg"
+        # Never upscale a raster master: that invents detail that is not there.
+        if not is_vector and width > source_width:
+            skipped.append((master, width))
+            continue
+
+        height = round(width * source_height / source_width)
+        png = folder / f"{stem}-{width}x{height}.png"
+        jpeg = folder / f"{stem}-{width}x{height}.jpg"
         expected.update({png.name, jpeg.name})
 
-        render_png(svg, width, height, png)
+        if is_vector:
+            render_png(master, width, height, png)
+        else:
+            resize_png(master, width, height, png)
         write_jpeg(png, jpeg)
         written.extend([png, jpeg])
 
@@ -118,24 +179,25 @@ def render_variant(svg, widths, written, removed):
 
 
 def main():
-    if shutil.which("rsvg-convert") is None:
-        raise SystemExit(
-            "rsvg-convert is missing. Install librsvg: brew install librsvg, "
-            "or apt-get install librsvg2-bin."
-        )
-
-    written, removed, sources = [], [], 0
+    written, removed, skipped, sources = [], [], [], 0
     for platform, widths in TARGET_WIDTHS.items():
         platform_dir = WALLPAPERS / platform
         if not platform_dir.is_dir():
             continue
-        for svg in sorted(platform_dir.rglob("*.svg")):
+        for folder in sorted(platform_dir.rglob("*")):
+            if not folder.is_dir():
+                continue
+            master = find_master(folder)
+            if master is None:
+                continue
             sources += 1
-            render_variant(svg, widths, written, removed)
+            render_variant(master, widths, written, removed, skipped)
 
     for path in removed:
         print(f"removed {path.relative_to(REPO)}")
-    print(f"Rendered {len(written)} export(s) from {sources} SVG(s).")
+    for master, width in skipped:
+        print(f"skipped {width}px for {master.relative_to(REPO)}, the master is smaller")
+    print(f"Rendered {len(written)} export(s) from {sources} master(s).")
     return 0
 
 

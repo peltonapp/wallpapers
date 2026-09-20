@@ -6,10 +6,11 @@
 
 ## Checklist
 
-- [ ] The SVG sits in `wallpapers/<platform>/<set>/<number>/<variant>/`, one per folder
-- [ ] It is named `<set>-<number>-<variant>.svg` and its `viewBox` is the real design size
-- [ ] It is a real vector file, not an auto-trace of a bitmap
-- [ ] It is plain drawing markup: no scripts, remote references or embedded bitmaps
+- [ ] One master per folder in `wallpapers/<platform>/<set>/<number>/<variant>/`
+- [ ] Vector master: named `<set>-<number>-<variant>.svg`, `viewBox` is the real design size,
+      real drawing markup with no scripts, remote references or embedded bitmaps
+- [ ] Raster master: named `<set>-<number>-<variant>-master.png` or `-master.jpg`,
+      and wide enough for the resolutions it should produce
 - [ ] I did not hand-export PNG or JPEG files, CI renders those
 - [ ] `python3 scripts/check_structure.py` and `python3 scripts/check_svgs.py` pass
 - [ ] The artwork is mine, or I have the rights to relicense it under CC BY 4.0

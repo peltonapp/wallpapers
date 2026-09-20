@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 """Generate the gallery section of README.md from the wallpapers/ directory.
 
-Layout expected:
+Every variant folder under wallpapers/<platform>/ becomes one gallery entry: a
+JPEG is shown as the preview, and each rendered resolution is offered as a PNG
+and JPEG download, plus the SVG when the master is a vector one. Authors come
+from git history, co-authors first.
 
-    wallpapers/<category>/<set>/<variant>/<name>-<size>.jpg
-                                          <name>-<size>.png
-                                          <name>.svg
-
-Every variant folder becomes one gallery entry: the JPEG is shown as the
-preview, and PNG / JPEG / SVG are offered as downloads. Authors come from
-git history, co-authors first.
+The same data is written to wallpapers.json for the app or a site to read.
 
 Only the part of README.md between the START and END markers is rewritten,
 so the rest of the file stays hand-editable.
@@ -20,6 +17,9 @@ import json
 import re
 import subprocess
 from pathlib import Path
+
+# Same directory, so the master naming stays in one place.
+from render_exports import MASTER_SUFFIX
 
 REPO = Path(__file__).resolve().parent.parent
 WALLPAPERS = REPO / "wallpapers"
@@ -99,9 +99,9 @@ def collect():
             sizes = sizes_in(variant_dir)
             if not sizes:
                 continue
-            svg = next(iter(sorted(variant_dir.glob("*.svg"))), None)
+            master = master_in(variant_dir)
             parts = variant_dir.relative_to(category_dir).parts
-            present = [size["jpeg"] for size in sizes] + [p for p in [svg] if p]
+            present = [size["jpeg"] for size in sizes] + [p for p in [master] if p]
             entries.append(
                 {
                     "platform": category_dir.name,
@@ -109,12 +109,27 @@ def collect():
                     "parts": parts,
                     "title": " / ".join(humanize(part) for part in parts),
                     "sizes": sizes,
-                    "svg": svg,
+                    "master": master,
                     "authors": authors_for(present),
                 }
             )
         categories[humanize(category_dir.name)] = entries
     return categories
+
+
+def master_in(variant_dir):
+    """The variant's master file: an SVG, or a -master raster for drawn art."""
+    svg = next(iter(sorted(variant_dir.glob("*.svg"))), None)
+    if svg is not None:
+        return svg
+    return next(
+        (
+            path
+            for path in sorted(variant_dir.iterdir())
+            if path.suffix in (".png", ".jpg") and path.stem.endswith(MASTER_SUFFIX)
+        ),
+        None,
+    )
 
 
 def sizes_in(variant_dir):
@@ -161,8 +176,9 @@ def cell(entry):
             if size[key] is not None
         ]
         rows.append(f'{size["width"]}x{size["height"]}: {" | ".join(formats)}')
-    if entry["svg"] is not None:
-        rows.append(f'Vector: <a href="{link(entry["svg"])}?raw=1">SVG</a>')
+    master = entry["master"]
+    if master is not None and master.suffix == ".svg":
+        rows.append(f'Vector: <a href="{link(master)}?raw=1">SVG</a>')
 
     authors = ", ".join(html.escape(name) for name in entry["authors"]) or "Unknown"
 
@@ -223,7 +239,12 @@ def manifest(categories):
                     "title": entry["title"],
                     "path": entry["path"],
                     "authors": entry["authors"],
-                    "svg": link(entry["svg"]) if entry["svg"] else None,
+                    "master": {
+                        "kind": "vector" if entry["master"].suffix == ".svg" else "raster",
+                        "path": link(entry["master"]),
+                    }
+                    if entry["master"]
+                    else None,
                     "exports": [
                         {
                             "width": size["width"],

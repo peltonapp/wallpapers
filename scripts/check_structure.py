@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """Check that wallpapers/ follows the layout and naming rules in CONTRIBUTING.md.
 
-The SVG is the source of truth: every variant folder needs exactly one, and the
-PNG and JPEG exports are rendered from it by scripts/render_exports.py. Exports
-are optional here, since CI produces them, but any that exist have to be named
-correctly and match their real pixel size.
+Every variant folder needs exactly one master, either a vector one
+(<stem>.svg) or a raster one for hand-drawn art and photography
+(<stem>-master.png). The PNG and JPEG exports are rendered from it by
+scripts/render_exports.py. Exports are optional here, since CI produces them,
+but any that exist have to be named correctly and match their real pixel size.
 """
 
 import re
 import sys
 from pathlib import Path
 
+# Same directory, so the render targets and the master naming stay in one place.
+from render_exports import MASTER_SUFFIX, TARGET_WIDTHS
+
 REPO = Path(__file__).resolve().parent.parent
 WALLPAPERS = REPO / "wallpapers"
-PLATFORMS = ("desktop", "mobile")
+PLATFORMS = tuple(TARGET_WIDTHS)
 DEPTH = 3  # <set>/<number>/<variant> below the platform folder
 
 NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -65,6 +69,7 @@ def expected_stem(variant_dir, platform_dir):
 def check_variant(variant_dir, platform_dir, problems):
     rel = variant_dir.relative_to(REPO).as_posix()
     stem = expected_stem(variant_dir, platform_dir)
+    smallest_target = min(TARGET_WIDTHS[platform_dir.name])
 
     files = [p for p in variant_dir.iterdir() if p.name not in IGNORED]
     for child in files:
@@ -72,17 +77,43 @@ def check_variant(variant_dir, platform_dir, problems):
             problems.append(f"{rel}: unexpected folder {child.name}/, variants are leaves")
 
     svgs = sorted(p for p in files if p.suffix == ".svg")
-    if not svgs:
-        problems.append(f"{rel}: has no SVG, that is the source of truth")
-    elif len(svgs) > 1:
-        names = ", ".join(p.name for p in svgs)
-        problems.append(f"{rel}: has {len(svgs)} SVGs ({names}), expected exactly one")
+    masters = sorted(
+        p
+        for p in files
+        if p.suffix in (".png", ".jpg") and p.stem.endswith(MASTER_SUFFIX)
+    )
+
+    if not svgs and not masters:
+        problems.append(
+            f"{rel}: has no master, add {stem}.svg or {stem}{MASTER_SUFFIX}.png"
+        )
+    elif len(svgs) + len(masters) > 1:
+        names = ", ".join(p.name for p in svgs + masters)
+        problems.append(f"{rel}: has more than one master ({names}), expected exactly one")
 
     for svg in svgs:
         if svg.stem != stem:
             problems.append(f"{rel}/{svg.name}: should be named {stem}.svg")
 
-    for raster in sorted(p for p in files if p.suffix in (".png", ".jpg")):
+    for master in masters:
+        if master.stem != f"{stem}{MASTER_SUFFIX}":
+            problems.append(
+                f"{rel}/{master.name}: should be named {stem}{MASTER_SUFFIX}{master.suffix}"
+            )
+        size = image_size(master)
+        if size is None:
+            problems.append(f"{rel}/{master.name}: could not be read as an image")
+        elif size[0] < smallest_target:
+            problems.append(
+                f"{rel}/{master.name}: is only {size[0]}px wide, needs at least "
+                f"{smallest_target}px since exports are never upscaled"
+            )
+
+    for raster in sorted(
+        p
+        for p in files
+        if p.suffix in (".png", ".jpg") and not p.stem.endswith(MASTER_SUFFIX)
+    ):
         match = SIZED.match(raster.stem)
         if not match:
             problems.append(

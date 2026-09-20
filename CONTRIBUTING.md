@@ -30,19 +30,36 @@ wallpapers/desktop/night/1/default/
 
 ## File rules
 
-**The SVG is the only file you need to commit.** Everything else is rendered
+**You commit one file per wallpaper: the master.** Every export is rendered
 from it by [`scripts/render_exports.py`](./scripts/render_exports.py) when your
 change lands on `main`, so you do not hand-export anything and every wallpaper
 gets the same set of resolutions.
 
-- Name the SVG `<set>-<number>-<variant>.svg`, with no resolution in the name.
-  A file in `desktop/night/1/no-marker/` is `night-1-no-marker.svg`.
-- Exactly one SVG per variant folder.
-- Set the `viewBox` to the real design size. Everything is rendered at that
-  aspect ratio, so 3840x2160 for a desktop design.
-- Keep the SVG editable rather than a single embedded bitmap. That is the whole
-  point of shipping it.
-- Lowercase letters, digits and hyphens for every folder and file name.
+A master is one of two things.
+
+**A vector master**, for anything drawn as vectors:
+
+- Named `<set>-<number>-<variant>.svg`, no resolution in the name. A file in
+  `desktop/night/1/no-marker/` is `night-1-no-marker.svg`.
+- Its `viewBox` is the real design size, since everything is rendered at that
+  aspect ratio. So 3840x2160 for a desktop design.
+- Real drawing markup, not one embedded bitmap. If your art is a bitmap, ship
+  it as a raster master instead of hiding it inside an SVG.
+
+**A raster master**, for hand-drawn art, painting, photography and anything
+else that has no meaningful vector form:
+
+- Named `<set>-<number>-<variant>-master.png` or `-master.jpg`. The `-master`
+  marker is what separates it from the generated exports, so it is required.
+- PNG for drawn and scanned art, JPEG for photography.
+- At least as wide as the largest target you want, since a raster master is
+  never upscaled. A 2400px wide desktop master simply produces the 1920 export
+  and skips 3840 and 2560.
+- Keep it at the highest quality you have. It is the archive copy everything
+  else is derived from.
+
+Either way: exactly one master per variant folder, and lowercase letters,
+digits and hyphens for every folder and file name.
 
 Current render targets, from
 [`scripts/render_exports.py`](./scripts/render_exports.py):
@@ -52,8 +69,9 @@ Current render targets, from
 | `desktop` | 3840, 2560, 1920 |
 | `mobile` | 1290, 1080 |
 
-Committing your own PNG or JPEG is allowed but pointless: CI overwrites the
-ones it renders and deletes the rest.
+Committing your own exports is pointless: CI overwrites the ones it renders and
+deletes every other PNG and JPEG in the folder. Your `-master` file is the
+one raster file it never touches.
 
 ## Source files
 
