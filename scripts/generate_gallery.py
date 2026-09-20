@@ -16,14 +16,15 @@ so the rest of the file stays hand-editable.
 """
 
 import html
+import json
 import re
-import struct
 import subprocess
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 WALLPAPERS = REPO / "wallpapers"
 OUTPUT = REPO / "README.md"
+MANIFEST = REPO / "wallpapers.json"
 COLUMNS = 2
 START = "<!-- gallery:start -->"
 END = "<!-- gallery:end -->"
@@ -78,32 +79,6 @@ def authors_for(paths):
     return names
 
 
-def png_size(path):
-    """Read width and height out of a PNG header, or None if it is not a PNG."""
-    try:
-        with path.open("rb") as handle:
-            header = handle.read(24)
-    except OSError:
-        return None
-    if len(header) < 24 or header[:8] != b"\x89PNG\r\n\x1a\n":
-        return None
-    width, height = struct.unpack(">II", header[16:24])
-    return f"{width}x{height}"
-
-
-def resolution_for(entry_paths):
-    """Resolution of a variant, from the filename if present, else the PNG header."""
-    for path in entry_paths:
-        match = re.search(r"(\d{3,5}x\d{3,5})", path.stem)
-        if match:
-            return match.group(1)
-    for path in entry_paths:
-        size = png_size(path)
-        if size:
-            return size
-    return None
-
-
 def humanize(name):
     return " ".join(word.capitalize() for word in name.replace("_", "-").split("-"))
 
@@ -121,25 +96,48 @@ def collect():
     for category_dir in sorted(p for p in WALLPAPERS.iterdir() if p.is_dir()):
         entries = []
         for variant_dir in sorted(p for p in category_dir.rglob("*") if p.is_dir()):
-            jpeg = next(iter(sorted(variant_dir.glob("*.jpg"))), None)
-            if jpeg is None:
+            sizes = sizes_in(variant_dir)
+            if not sizes:
                 continue
-            png = next(iter(sorted(variant_dir.glob("*.png"))), None)
             svg = next(iter(sorted(variant_dir.glob("*.svg"))), None)
             parts = variant_dir.relative_to(category_dir).parts
-            present = [p for p in (jpeg, png, svg) if p]
+            present = [size["jpeg"] for size in sizes] + [p for p in [svg] if p]
             entries.append(
                 {
+                    "platform": category_dir.name,
+                    "path": variant_dir.relative_to(REPO).as_posix(),
+                    "parts": parts,
                     "title": " / ".join(humanize(part) for part in parts),
-                    "jpeg": jpeg,
-                    "png": png,
+                    "sizes": sizes,
                     "svg": svg,
-                    "resolution": resolution_for(present),
                     "authors": authors_for(present),
                 }
             )
         categories[humanize(category_dir.name)] = entries
     return categories
+
+
+def sizes_in(variant_dir):
+    """Group the exports in a folder by resolution, largest first."""
+    by_resolution = {}
+    for raster in sorted(variant_dir.iterdir()):
+        if raster.suffix not in (".png", ".jpg"):
+            continue
+        match = re.search(r"-(\d{3,5})x(\d{3,5})$", raster.stem)
+        if not match:
+            continue
+        key = (int(match.group(1)), int(match.group(2)))
+        entry = by_resolution.setdefault(
+            key, {"width": key[0], "height": key[1], "png": None, "jpeg": None}
+        )
+        entry["png" if raster.suffix == ".png" else "jpeg"] = raster
+
+    # A resolution without a JPEG cannot be previewed or offered as one.
+    return [
+        by_resolution[key]
+        for key in sorted(by_resolution, reverse=True)
+        if by_resolution[key]["jpeg"]
+    ]
 
 
 def link(path):
@@ -150,24 +148,30 @@ def cell(entry):
     if entry is None:
         return "<td></td>"
 
-    preview = link(entry["jpeg"])
-    downloads = []
-    for label, key in (("PNG", "png"), ("JPEG", "jpeg"), ("SVG", "svg")):
-        path = entry[key]
-        if path is not None:
-            downloads.append(f'<a href="{link(path)}?raw=1">{label}</a>')
+    sizes = entry["sizes"]
+    # Preview with the smallest JPEG so the README stays light, link the largest.
+    preview = link(sizes[-1]["jpeg"])
+    full = link(sizes[0]["jpeg"])
+
+    rows = []
+    for size in sizes:
+        formats = [
+            f'<a href="{link(size[key])}?raw=1">{label}</a>'
+            for label, key in (("PNG", "png"), ("JPEG", "jpeg"))
+            if size[key] is not None
+        ]
+        rows.append(f'{size["width"]}x{size["height"]}: {" | ".join(formats)}')
+    if entry["svg"] is not None:
+        rows.append(f'Vector: <a href="{link(entry["svg"])}?raw=1">SVG</a>')
 
     authors = ", ".join(html.escape(name) for name in entry["authors"]) or "Unknown"
-    meta = [f"Author: {authors}"]
-    if entry["resolution"]:
-        meta.insert(0, entry["resolution"])
 
     return (
         '<td width="50%" valign="top" align="center">'
-        f'<a href="{preview}?raw=1"><img src="{preview}" alt="{html.escape(entry["title"])}" width="100%"></a>'
+        f'<a href="{full}?raw=1"><img src="{preview}" alt="{html.escape(entry["title"])}" width="100%"></a>'
         f'<br><b>{html.escape(entry["title"])}</b>'
-        f'<br><sub>{" &middot; ".join(meta)}</sub>'
-        f'<br>{" | ".join(downloads)}'
+        f"<br><sub>Author: {authors}</sub>"
+        f'<br><sub>{"<br>".join(rows)}</sub>'
         "</td>"
     )
 
@@ -203,6 +207,44 @@ def render(categories):
     return "\n".join(lines)
 
 
+def manifest(categories):
+    """The same data as the gallery, for the app or a site to consume."""
+    wallpapers = []
+    for entries in categories.values():
+        for entry in entries:
+            set_name, number, variant = (list(entry["parts"]) + [None, None, None])[:3]
+            wallpapers.append(
+                {
+                    "id": entry["path"].removeprefix("wallpapers/").replace("/", "-"),
+                    "platform": entry["platform"],
+                    "set": set_name,
+                    "number": number,
+                    "variant": variant,
+                    "title": entry["title"],
+                    "path": entry["path"],
+                    "authors": entry["authors"],
+                    "svg": link(entry["svg"]) if entry["svg"] else None,
+                    "exports": [
+                        {
+                            "width": size["width"],
+                            "height": size["height"],
+                            "png": link(size["png"]) if size["png"] else None,
+                            "jpeg": link(size["jpeg"]) if size["jpeg"] else None,
+                        }
+                        for size in entry["sizes"]
+                    ],
+                }
+            )
+
+    return {
+        "note": "Generated by scripts/generate_gallery.py. Do not edit by hand.",
+        "license": "CC-BY-4.0",
+        "repository": "https://github.com/peltonapp/wallpapers",
+        "count": len(wallpapers),
+        "wallpapers": wallpapers,
+    }
+
+
 def main():
     readme = OUTPUT.read_text(encoding="utf-8")
     before, start, rest = readme.partition(START)
@@ -212,11 +254,17 @@ def main():
             f"{OUTPUT.name} is missing the {START} / {END} markers, nothing to fill."
         )
 
-    gallery = render(collect())
+    categories = collect()
+    gallery = render(categories)
     OUTPUT.write_text(
         f"{before}{START}\n\n{gallery.rstrip()}\n\n{END}{after}", encoding="utf-8"
     )
     print(f"Wrote the gallery section of {OUTPUT.relative_to(REPO)}")
+
+    MANIFEST.write_text(
+        json.dumps(manifest(categories), indent=2) + "\n", encoding="utf-8"
+    )
+    print(f"Wrote {MANIFEST.relative_to(REPO)}")
 
 
 if __name__ == "__main__":
