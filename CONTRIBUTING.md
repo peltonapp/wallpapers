@@ -39,6 +39,18 @@ wallpapers/desktop/night/1/default/
 - Keep the SVG editable rather than a single embedded bitmap. That is the whole
   point of shipping it.
 
+## Source files
+
+Exports are what people download, but the editable project file is what keeps a
+design alive. Dropping yours in `source/` alongside the existing Affinity file
+is much appreciated, whatever you work in: Affinity, Figma, Illustrator, Inkscape
+or anything else.
+
+It is not required, and no submission is turned down for lacking one. It just
+means the next person can adjust a design instead of rebuilding it from scratch.
+Keep the file named after the set it belongs to, and leave out anything you
+cannot relicense under CC BY 4.0, such as bought fonts or stock assets.
+
 ## The gallery
 
 Do not hand-edit the gallery section of `README.md`. Everything between the
