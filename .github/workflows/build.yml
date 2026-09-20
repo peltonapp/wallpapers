@@ -1,4 +1,4 @@
-name: Gallery
+name: Build
 
 on:
   push:
@@ -6,19 +6,19 @@ on:
       - main
     paths:
       - "wallpapers/**"
-      - "scripts/generate_gallery.py"
-      - ".github/workflows/gallery.yml"
+      - "scripts/**"
+      - ".github/workflows/build.yml"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: gallery-${{ github.ref }}
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  gallery:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,17 +29,26 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Generate the gallery
+      - name: Install rendering dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin
+          python -m pip install --upgrade pillow
+
+      - name: Render exports from the SVGs
+        run: python scripts/render_exports.py
+
+      - name: Generate the gallery and manifest
         run: python scripts/generate_gallery.py
 
       - name: Commit changes
         run: |
-          if git diff --quiet -- README.md; then
-            echo "Gallery is up to date."
+          if git diff --quiet; then
+            echo "Everything is up to date."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git commit -s -m "Update gallery"
+          git add -A
+          git commit -s -m "Update exports, gallery and manifest"
           git push
