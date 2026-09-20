@@ -125,8 +125,9 @@ Both checks run on every pull request. Rendering and generating do not, since
 ## Attribution
 
 The author shown under each wallpaper comes from the newest commit touching its
-files. If you are committing someone else's art, credit them with a trailer and
-they will be listed first:
+master file. The generated exports are ignored on purpose, since CI rewrites
+those and would otherwise credit itself. If you are committing someone else's
+art, credit them with a trailer and they will be listed first:
 
 ```
 Co-authored-by: Their Name <their@email>
@@ -152,9 +153,11 @@ Co-authored-by: Their Name <their@email>
 **We do accept:**
 
 - Original artwork you made yourself, in any style
+- Vector work, and hand-drawn art, painting or photography through a raster
+  master
 - New sets, and new variants of an existing set
 - Reworks of existing wallpapers, as long as you keep the set recognisable
-- Desktop and mobile exports, including resolutions we do not cover yet
+- Desktop and mobile wallpapers alike
 - Editable source files, see [below](#source-files)
 
 Keep SVGs to plain drawing markup. No `<script>`, no `<foreignObject>`, no
@@ -172,8 +175,9 @@ on top of that output.
 AI is fine as a tool inside your own work: upscaling, denoising, masking,
 background removal, or generating a reference you then draw from yourself. The
 line is authorship. The composition, the shapes and the final artwork have to
-be yours, and the SVG has to be a real vector file you built rather than an
-auto-trace of a generated raster.
+be yours. A vector master has to be a file you built rather than an auto-trace
+of a generated raster, and a raster master has to be your own drawing, painting
+or photograph rather than a generated image you cleaned up.
 
 If any part of your submission used AI, say so in the pull request and explain
 where. Undisclosed AI work found later gets removed.

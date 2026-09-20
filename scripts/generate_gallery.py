@@ -101,7 +101,9 @@ def collect():
                 continue
             master = master_in(variant_dir)
             parts = variant_dir.relative_to(category_dir).parts
-            present = [size["jpeg"] for size in sizes] + [p for p in [master] if p]
+            # Authors come from the master alone. The exports are rewritten by
+            # CI, which would otherwise credit the bot for everyone's art.
+            credited = [master] if master else [size["jpeg"] for size in sizes]
             entries.append(
                 {
                     "platform": category_dir.name,
@@ -110,7 +112,7 @@ def collect():
                     "title": " / ".join(humanize(part) for part in parts),
                     "sizes": sizes,
                     "master": master,
-                    "authors": authors_for(present),
+                    "authors": authors_for(credited),
                 }
             )
         categories[humanize(category_dir.name)] = entries
