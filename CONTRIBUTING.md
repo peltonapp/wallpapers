@@ -67,6 +67,42 @@ they will be listed first:
 Co-authored-by: Their Name <their@email>
 ```
 
+## What we accept
+
+These wallpapers ship as part of Pelton, so they end up on other people's
+screens at work and in public. Submissions are rejected if they contain:
+
+- Sexual, gory, shocking or otherwise not-safe-for-work imagery
+- Hateful, harassing or discriminatory content, including slurs and hate
+  symbols, whether obvious or hidden in the art
+- Violence, self-harm, or anything glorifying either
+- Drug, weapon or gambling themes
+- Politically or religiously charged messaging
+- Third-party logos, trademarks, characters or brands you do not own
+- Real people's likenesses without their permission
+- Hidden or disguised payloads: text you only see at certain zoom levels,
+  steganography, tracking pixels, scripts or external references inside the
+  SVG, QR codes, or links to anything outside the Pelton project
+
+Keep SVGs to plain drawing markup. No `<script>`, no `<foreignObject>`, no
+remote `href` fetches, no embedded fonts pulled off a CDN. Anything that makes
+a network request or executes will be rejected on sight.
+
+## AI-generated art
+
+Fully AI-generated wallpapers are not accepted. Nothing where you wrote a
+prompt and submitted what came back, and nothing traced or lightly retouched
+on top of that output.
+
+AI is fine as a tool inside your own work: upscaling, denoising, masking,
+background removal, or generating a reference you then draw from yourself. The
+line is authorship. The composition, the shapes and the final artwork have to
+be yours, and the SVG has to be a real vector file you built rather than an
+auto-trace of a generated raster.
+
+If any part of your submission used AI, say so in the pull request and explain
+where. Undisclosed AI work found later gets removed.
+
 ## Licensing
 
 By contributing you agree your work is released under
