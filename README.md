@@ -4,6 +4,10 @@
 
 Official desktop wallpapers for [Pelton](https://pelton.app)
 
+## Gallery
+
+Browse every wallpaper in the [gallery](./GALLERY.md).
+
 ## Usage
 
 Download any image from this repo and set it as your desktop wallpaper. That's it.
