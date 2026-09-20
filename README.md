@@ -21,21 +21,8 @@ More of the Pelton look lives at [pelton.app/design](https://pelton.app/design).
 
 ## Contributing
 
-Drop new art in `wallpapers/desktop/<set>/<number>/<variant>/` or the matching
-`wallpapers/mobile/` path, keeping all three formats side by side. The gallery
-below is regenerated on every push by
-[`scripts/generate_gallery.py`](./scripts/generate_gallery.py), so leave it
-alone and edit the prose instead.
-
-## License
-
-Copyright (c) 2026 Arne K. (https://github.com/TRC-Loop)
-
-This work is licensed under the Creative Commons Attribution 4.0 International
-License. To view a copy of this license, visit
-https://creativecommons.org/licenses/by/4.0/
-
-See [LICENSE](./LICENSE) for the full text.
+New art is welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the folder
+layout, naming rules and how the gallery is generated.
 
 ## Gallery
 
@@ -65,3 +52,13 @@ See [LICENSE](./LICENSE) for the full text.
 *Nothing here yet.*
 
 <!-- gallery:end -->
+
+## License
+
+Copyright (c) 2026 Arne K. (https://github.com/TRC-Loop)
+
+This work is licensed under the Creative Commons Attribution 4.0 International
+License. To view a copy of this license, visit
+https://creativecommons.org/licenses/by/4.0/
+
+See [LICENSE](./LICENSE) for the full text.
