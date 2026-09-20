@@ -29,17 +29,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Generate GALLERY.md
+      - name: Generate the gallery
         run: python scripts/generate_gallery.py
 
       - name: Commit changes
         run: |
-          if git diff --quiet -- GALLERY.md; then
+          if git diff --quiet -- README.md; then
             echo "Gallery is up to date."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add GALLERY.md
+          git add README.md
           git commit -s -m "Update gallery"
           git push
